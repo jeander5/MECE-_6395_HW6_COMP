@@ -6,7 +6,7 @@ Created on Thu Nov  5 18:11:56 2020
 """
 
 # MECE 6397, SciComp, HW 6, Computational
-# 1-D Diffusion Problem Crank Nicholson
+# 1-D Diffusion Problem Crank Nicolson
 #https://github.com/jeander5/MECE_6397_HW6_COMP
 
 #imports
@@ -110,8 +110,8 @@ f=[sin(k*x) for x in x]
 u_appx[0,1:-1]=f[1:-1]
 #I still have [1:-1] no need to reassign those endpoints for t =0
 
-#on to the scheme......4
-#i now of to spell lambda, put python has lambda functions so I write lamda
+#on to the scheme......
+#i know how to spell lambda, put python has lambda functions so I write lamda
 lamda=D*dt/(dx*dx)
 b=-lamda/2
 a=1+lamda
@@ -120,7 +120,7 @@ c=-lamda/2
 d=1-lamda
 
 #im not really seeing a better way to do this besides calling that function inside a for loop and
-#filling up my u_appxution matrix
+#filling up my u_appx matrix
 for n in range (1,len_t):
     #I wonder if its inefficient to have u_appx[n-1,: in the function call, I bet it is.
     #I will just define a new variable    
