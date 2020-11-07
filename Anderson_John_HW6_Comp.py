@@ -29,38 +29,7 @@ g_L=0
 
 #k is just an integer
 k=1
-#try different increasing values of w, from wdt = 0.1 on up.
-w=0.25
-#anonoymous lambda functions for boundary conditions part b
-#hmmm I cant make the inputs to these a list...lets just make them a regular function
-#g_0b=lambda t: sin(w*t)
-#g_Lb=lambda t,x: sin(w*t)*cos(k*L)
-
-def BC_Partb(x,t,w):
-    """returns boundary conditions for the function from Part b"""
-#inputs are x and t list, and then weq which is the vlaue that w*dt is equal to
-#or I can just input w because I need it later for exact value    
-#    dt = t[-1]-t[-2]
-#    w = weq/dt
-    g_0b =[sin(w*t) for t in t]
-    g_Lb= [sin(w*t)*cos(k*L) for t in t]
-    return(g_0b, g_Lb)
-    
-    
-#I also have that Capitol F function, what should I call that, its not really a Forcing Functions
-#The prescribed function
-def preF(D,k,w,x,t): 
-    """returns values for the prescribed function F(x,t)"""
-    len_x = len(x)
-    len_t = len(t)
-    func_vals=np.zeros(shape=(len_t, len_x))    
-    for n in range(len_t):
-        func_vals[n,:]=[cos(k*x)*((w*cos(w*t[n])+D*k*k*sin(w*t[n]))) for x in x]
-    return func_vals
-#Inputs are x and t values, and the given constants    
-
-        
-        
+     
 #functions
 
 #discretize the interval function, for time and length     
@@ -76,7 +45,7 @@ def DIF(L ,N):
 def thomas_alg_a(N,a,b,c,d,f):
     """returns approximate u values for the function from Part 1"""
 #inputs are N interavl length, the tridiagonal elements, which are scalars here
-#and f, which is the just the right hand side, which is a vector  
+#and f, which is the just the right hand side, or the u_n elements from Crank Nicolson
     
 #Pre Thomas Algorithm set up. For this problem these values are all constant
     alpha = [0]*N
@@ -94,6 +63,33 @@ def thomas_alg_a(N,a,b,c,d,f):
     for j in range(1, N):
         u_appx[-1-j] = (g[-1-j]-c*u_appx[-j])/alpha[-1-j]
     return u_appx
+
+def thomas_alg_b(N,a,b,c,d,f,F,g0_b):
+    """returns approximate u values for the function from Part 1"""
+#inputs are N interavl length, the tridiagonal elements, which are scalars here
+#and f, which is the just the right hand side, or the u_n elements from Crank Nicolson
+#also in this function we have the prescribed function F which contributes to the rhs
+#and the boundary condition g0_b (u x=0) which contributes to the first rhs equation    
+    
+    alpha = [0]*N
+    g = [0]*N
+    u_appx = [0]*N
+#Following the pseudocode
+#Zeroth element of this list corresponds to the first subscript in Thomas Algorithm
+    alpha[0] = a
+    g[0] = -b*f[0]+d*f[1]-c*f[2]+F[1]-g0_b*b
+    for j in range(1, N):
+        rhs=-b*f[j]+d*f[j+1]-c*f[j+2]+F[1+j]
+        alpha[j] = a-(b/alpha[j-1])*c
+        g[j] = rhs-(b/alpha[j-1])*g[j-1]
+    u_appx[N-1] = g[N-1]/alpha[N-1]
+    for j in range(1, N):
+        u_appx[-1-j] = (g[-1-j]-c*u_appx[-j])/alpha[-1-j]
+    return u_appx
+
+#I will maybe make these 1 function with the same inputs later.
+#right now they are seperate because of the different boundary conditions
+#and the different values for prescribed function F
 
 #u exact function part a
 def u_exact_func_a(k, D, t, x):
@@ -121,26 +117,46 @@ def u_exact_func_b(k, D, w, t, x):
         func_vals[n,:]=[sin(w*t[n])*cos(k*x) for x in x]
     return func_vals
 
+def BC_Partb(x,t,w):
+    """returns boundary conditions for the function from Part b"""
+#inputs are x and t list, and then weq which is the vlaue that w*dt is equal to
+#or I can just input w because I need it later for exact value    
+#    dt = t[-1]-t[-2]
+#    w = weq/dt
+    g_0b =[sin(w*t) for t in t]
+    g_Lb= [sin(w*t)*cos(k*L) for t in t]
+    return(g_0b, g_Lb)
+    
+#The prescribed function F
+def preF(D,k,w,x,t): 
+    """returns values for the prescribed function F(x,t)"""
+#Inputs are x and t values, and the given constants    
+    len_x = len(x)
+    len_t = len(t)
+    func_vals=np.zeros(shape=(len_t, len_x))    
+    for n in range(len_t):
+        func_vals[n,:]=[cos(k*x)*((w*cos(w*t[n])+D*k*k*sin(w*t[n]))) for x in x]
+    return func_vals
+
+
 
 # N right here for now, just using the same for x and T
-N = 55
-#calling the DIF
+N = 5
 
+#calling the DIF
 x, dx = DIF(L,N)
 t, dt = DIF (T,N)
-#lets define omega right here
+#lets define omega right here actually, after dt is defined
 w=0.1/dt 
 len_x = len(x)
 len_t = len(t)
 
-#might as well call u_exact rn
-u_exact=u_exact_func_a(k, D, t, x)
-
-#okay now lets apply the scheme for part a
+#part a
 
 #zeros u_approximation matrix
 #we are gonna fill this baby up as we go
 u_appx=np.zeros(shape=(len_t, len_x))
+
 #rows are time steps, columns x position
 #filling in initial and boundary conditions
 # the boundary conditions u(x=0,t) and  u(x=L,t) are zero for all t  so I just leave as zeros
@@ -155,7 +171,7 @@ f=[sin(k*x) for x in x]
 u_appx[0,1:-1]=f[1:-1]
 #I still have [1:-1] no need to reassign those endpoints for t =0
 
-#on to the scheme......
+#constants from the CN scheme used in the thomas algorithm
 #i know how to spell lambda, put python has lambda functions so I write lamda
 lamda=D*dt/(dx*dx)
 b=-lamda/2
@@ -171,103 +187,35 @@ for n in range (1,len_t):
     #I will just define a new variable    
     q=u_appx[n-1,:]
     u_appx[n,1:-1]=thomas_alg_a(N,a,b,c,d,q)
-#looks good to me    
-#lets make a git hub    
-    
-#okay lets move on to part b
-#ok got my functions
-#now lets do my algorithm
-# I know have F which is part of the right hand side of my algorithm for all values of T
-# should I modify the input? create a new function? modify the function? 
-#I think I can just modify the input    
-#oh but f(x,t=0) is just zero for this case so it is actually kinda easier
-#I will just quickly create a new function and try and combine them later
+   
+#calling exact function
+u_exact=u_exact_func_a(k, D, t, x)
 
-def thomas_alg_b(N,a,b,c,d,f,F,g0_b):
-    """returns approximate u values for the function from Part 1"""
-#inputs are N interavl length, the tridiagonal elements, which are scalars here
-#and f, which is the just the right hand side, which is a vector  
-    
-#Pre Thomas Algorithm set up. For this problem these values are all constant
-    alpha = [0]*N
-    g = [0]*N
-    u_appx = [0]*N
-#Following the pseudocode
-#Zeroth element of this list corresponds to the first subscript in Thomas Algorithm
-    alpha[0] = a
-    g[0] = -b*f[0]+d*f[1]-c*f[2]+F[1]-g0_b*b
-    for j in range(1, N):
-        rhs=-b*f[j]+d*f[j+1]-c*f[j+2]+F[1+j]
-        alpha[j] = a-(b/alpha[j-1])*c
-        g[j] = rhs-(b/alpha[j-1])*g[j-1]
-    u_appx[N-1] = g[N-1]/alpha[N-1]
-    for j in range(1, N):
-        u_appx[-1-j] = (g[-1-j]-c*u_appx[-j])/alpha[-1-j]
-    return u_appx
 
-#okay set up solution matrix
-    
-SOL=np.zeros(shape=(len_t, len_x))
+#part b
 
-#fill in boundary conditions, initial conditions are just zero
+#set up solution matrix    
+u_appx_b=np.zeros(shape=(len_t, len_x))
+#fill in boundary conditions, need to call that function.
 g0_b,gL_b=BC_Partb(x,t,w)
-SOL[:,0]=g0_b
-SOL[:,-1]=gL_b
+u_appx_b[:,0]=g0_b
+u_appx_b[:,-1]=gL_b
+
+#The Initial conditions are just zero so no need to reassign them
 #calling the prescribed function F
 F=preF(D,k,w,x,t)
 # the constants a,b,c,d are the same for part 1
 
-#filling up my SOL matrix
+#filling up my matrix
 for n in range (1,len_t):
-    #I will just define a new variable so I am not returning the f initial condtion function     
-    q=SOL[n-1,:]
+    q=u_appx_b[n-1,:]
     #that prescribed function F needs to be multiplied by dt
     Q=F[n-1,:]*dt
-    SOL [n,1:-1]=thomas_alg_b(N,a,b,c,d,q,Q,SOL[n,0])
+    u_appx_b[n,1:-1]=thomas_alg_b(N,a,b,c,d,q,Q,u_appx_b[n,0])
 
 #calling exact function
+u_exact_b=u_exact_func_b(k, D, w, t, x)    
 
-SOLB=u_exact_func_b(k, D, w, t, x)    
-
-#maybe I should change all these list to arrays
-
-
-#i have an error somewhere its in the algorith or calling the algorithm
-# i think it has to do with the F
-#nope! it was a copy and pasting issue! Okay good. 
-#i had SOL[0] as u_appx[0] from the part a when calling
-#its still not perfect though, there is another error
-
-#and Im not seeing what ele to do. Im adding F[0,1], which corresponds to rhs or the f in the algorith
-#and Im multiplying F by dt*
-# Im just not seeing it
-
-#when I do the scheme I am first at n=0 and solving for n=0+dt*1
-#So I have been doing F at t=0 into the algorithm 
-#but maybe it should be F at t=0+dt
-
-#maybe I have a row or a column switched around somewhere I dont think so tho
-
-#take a break, comeback later
-
-#its gotta be in the algorithm
-
-#and its gotta be realted to the F
-
-#okay I had g[0] wrong, it was correct for the first calling of the loop but wrong after
-
-#still there is something else wrong 
-
-#the more points the bigger error I get, maybe its related to the w? because I cant see it
-
-#okay its the first righthand side eq. It always is that first equation
-
-#and im not including that first boundary condition.
-
-#it was zero in the other one.
-
-#I really should rewrite a function that just takes in everything it needs
-#even if I am feeding in vectors in stead of constatns
-#it would make debugging alot easier.
-#but no then I I will have all these vectors that could be really big when a all I need is a variable 
-
+#next I need to do error and grid convergence. For the grid convergence I dont think I will do it 
+#in a while loop like for HW 4, I will just do it manually and save the graphs, tables ect.
+#its already pretty close with not that many grid points
