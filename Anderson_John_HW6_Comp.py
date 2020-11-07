@@ -43,7 +43,7 @@ def BC_Partb(x,t,w):
 #    dt = t[-1]-t[-2]
 #    w = weq/dt
     g_0b =[sin(w*t) for t in t]
-    g_Lb= [g_0b*cos(k*L) for g_0b in g_0b]
+    g_Lb= [sin(w*t)*cos(k*L) for t in t]
     return(g_0b, g_Lb)
     
     
@@ -122,13 +122,12 @@ def u_exact_func_b(k, D, w, t, x):
     return func_vals
 
 
-
 # N right here for now, just using the same for x and T
-N = 8
+N = 55
 #calling the DIF
 
 x, dx = DIF(L,N)
-t, dt = DIF (T,N*2)
+t, dt = DIF (T,N)
 #lets define omega right here
 w=0.1/dt 
 len_x = len(x)
@@ -184,7 +183,7 @@ for n in range (1,len_t):
 #oh but f(x,t=0) is just zero for this case so it is actually kinda easier
 #I will just quickly create a new function and try and combine them later
 
-def thomas_alg_b(N,a,b,c,d,f,F):
+def thomas_alg_b(N,a,b,c,d,f,F,g0_b):
     """returns approximate u values for the function from Part 1"""
 #inputs are N interavl length, the tridiagonal elements, which are scalars here
 #and f, which is the just the right hand side, which is a vector  
@@ -196,7 +195,7 @@ def thomas_alg_b(N,a,b,c,d,f,F):
 #Following the pseudocode
 #Zeroth element of this list corresponds to the first subscript in Thomas Algorithm
     alpha[0] = a
-    g[0] = f[0]+F[1]
+    g[0] = -b*f[0]+d*f[1]-c*f[2]+F[1]-g0_b*b
     for j in range(1, N):
         rhs=-b*f[j]+d*f[j+1]-c*f[j+2]+F[1+j]
         alpha[j] = a-(b/alpha[j-1])*c
@@ -223,12 +222,12 @@ for n in range (1,len_t):
     #I will just define a new variable so I am not returning the f initial condtion function     
     q=SOL[n-1,:]
     #that prescribed function F needs to be multiplied by dt
-    Q=dt*F[n-1,:]
-    SOL [n,1:-1]=thomas_alg_b(N,a,b,c,d,q,Q)
+    Q=F[n-1,:]*dt
+    SOL [n,1:-1]=thomas_alg_b(N,a,b,c,d,q,Q,SOL[n,0])
 
 #calling exact function
 
-UB=u_exact_func_b(k, D, w, t, x)    
+SOLB=u_exact_func_b(k, D, w, t, x)    
 
 #maybe I should change all these list to arrays
 
@@ -252,4 +251,23 @@ UB=u_exact_func_b(k, D, w, t, x)
 #take a break, comeback later
 
 #its gotta be in the algorithm
+
+#and its gotta be realted to the F
+
+#okay I had g[0] wrong, it was correct for the first calling of the loop but wrong after
+
+#still there is something else wrong 
+
+#the more points the bigger error I get, maybe its related to the w? because I cant see it
+
+#okay its the first righthand side eq. It always is that first equation
+
+#and im not including that first boundary condition.
+
+#it was zero in the other one.
+
+#I really should rewrite a function that just takes in everything it needs
+#even if I am feeding in vectors in stead of constatns
+#it would make debugging alot easier.
+#but no then I I will have all these vectors that could be really big when a all I need is a variable 
 
