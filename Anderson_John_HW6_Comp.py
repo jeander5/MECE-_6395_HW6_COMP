@@ -12,33 +12,33 @@ Created on Thu Nov  5 18:11:56 2020
 #imports
 import math
 import numpy as np
-import time
+#import matplotlib.pyplot as plt
 import matplotlib.pyplot as plt
+#import time
 from math import sin as sin
 from math import cos as cos
 
-#import matplotlib.pyplot as plt
 
 #Constants given in problem statement, constant for both boundary conditions
-#using case a) for now
-
 L=math.pi
 D=0.1
 T=10
 #k is just an integer
 k=1
 
-#discretize the interval function, for time and length     
+#discretize the interval function, also works for time     
 def DIF(L ,N):
-#Discretizing the interval length. This is the same for both problems
+    """discretizes an interval with N interior points"""
+#Inputs are interval lengths number of interior points    
     h = L/(N+1)
     x = np.linspace(0, L, N+2)
     return(x, h)
     
 def thomas_alg_func(a,b,c,f):
     """solves tridiagonal matrix"""
-#vectors containing the tridiagonal elements and right hand side
+#inputs are vectors containing the tridiagonal elements and right hand side
     N=len(a)
+#storage vectors    
     u_appx = [0]*N
     alpha = [0]*N
     g = [0]*N
@@ -58,7 +58,7 @@ def thomas_alg_func(a,b,c,f):
 def u_exact_func_a(k, D, t, x):
     """returns exact u values for the function from Part a"""
 #Inputs are x and t values, and the given constants
-    # i geuss I need to use a for loop here I would like to do some like this:
+    # i geuss I need to use a for loop here. I would like to do some like this:
 #    f= sin(x*t) for x in x and t and t
     len_x = len(x)
     len_t = len(t)
@@ -80,12 +80,12 @@ def u_exact_func_b(k, D, w, t, x):
         func_vals[n,:]=[sin(w*t[n])*cos(k*x) for x in x]
     return func_vals
 
-def BC_Partb(t,w):
+#dont really think I need functions for these but I made the.
+#it is nice to have I can change the inputs on the fly    
+def BC_Partb(t,w,k,L):
     """returns boundary conditions for the function from Part b"""
-#inputs are x and t list, and then weq which is the vlaue that w*dt is equal to
+#inputs the time list and the given constants
 #or I can just input w because I need it later for exact value    
-#    dt = t[-1]-t[-2]
-#    w = weq/dt
     a=cos(k*L)
     g_0b =[sin(w*t) for t in t]
     g_Lb= [sin(w*t)*a for t in t]
@@ -115,7 +115,7 @@ def avg_error (exact,appx):
 
 
 # N right here for now, just using the same for x and T
-N = 666
+N = 200
 
 #calling the DIF
 x, dx = DIF(L,N)
@@ -181,7 +181,7 @@ error_a=avg_error(u_exact_a[-1,:],u_appx_a[-1,:])
 #is not working
 
 #values given in problem statement
-g_0,g_L=BC_Partb(t,w)
+g_0,g_L=BC_Partb(t,w,k,L)
 f=[0]*len_x
 F=preF(D,k,w,x,t)
 
@@ -207,8 +207,10 @@ for n in range (1,len_t):
     q=u_appx_b[n-1,:]
     rhs[0]=-b*q[0]+d*q[1]-c*q[2]-b*u_appx_b[n,0]+dt*Q[0]
 #    inner for loop for filling up the rhs vector for the thomas algorithm
+#    print(n)
     for j in range (1,N):
         rhs[j]=-b*q[j]+d*q[j+1]-c*q[j+2]+dt*Q[j+1]
+#        print(j)
     u_appx_b[n,1:-1]=thomas_alg_func(av,bv,cv,rhs)
 
 #calling exact function
@@ -220,3 +222,6 @@ error_b=avg_error(u_exact_b[-1,:],u_appx_b[-1,:])
 #I dont know maybe it is right. as long as N is even I dont have that humongous error from the x/sin(pi/2) term
 #error goes down with with Increaing N
 #and error goes up with increasing omega
+# for large N my error on the right hand side is big.
+#the error is bigger for large t but still reasonable
+#okay so maybe I need to modify the last input to the rhs vector
