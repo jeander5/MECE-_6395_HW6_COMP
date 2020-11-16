@@ -84,8 +84,7 @@ def u_exact_func_b(k, D, w, t, x):
 #it is nice to have I can change the inputs on the fly    
 def BC_Partb(t,w,k,L):
     """returns boundary conditions for the function from Part b"""
-#inputs the time list and the given constants
-#or I can just input w because I need it later for exact value    
+#inputs are the time list and the given constants
     a=cos(k*L)
     g_0b =[sin(w*t) for t in t]
     g_Lb= [sin(w*t)*a for t in t]
@@ -115,7 +114,7 @@ def avg_error (exact,appx):
 
 
 # N right here for now, just using the same for x and T
-N = 200
+N = 400
 
 #calling the DIF
 x, dx = DIF(L,N)
@@ -162,12 +161,17 @@ rhs= [0]*N
 #for loop for calling the thomas algorithm at the different time steps
 for n in range (1,len_t):
     Q=F[n-1,:]
-    q=u_appx_a[n-1,:]   
-    rhs[0]=-b*q[0]+d*q[1]-c*q[2]-b*u_appx_a[n,0]+dt*Q[0]
+    q=u_appx_a[n-1,:]
+# first input different    
+    rhs[0]=-b*q[0]+d*q[1]-c*q[2]-b*u_appx_a[n,0]+dt*Q[1]
 #    inner for loop for filling up the rhs vector for the thomas algorithm    
-    for j in range (1,N):
-        rhs[j]=-b*q[j]+d*q[j+1]-c*q[j+2]+dt*Q[j+1]
+    for j in range (1,N-1):
+        rhs[j]=-b*q[j]+d*q[j+1]-c*q[j+2]+dt*Q[j+1] 
+    #last input different
+        j=j+1
+        rhs[j]=-b*q[j]+d*q[j+1]-c*q[j+2]-c*u_appx_a[n,-1]+dt*Q[j+1]      
     u_appx_a[n,1:-1]=thomas_alg_func(av,bv,cv,rhs)
+
 
 #calling exact function
 u_exact_a=u_exact_func_a(k, D, t, x)
@@ -182,6 +186,7 @@ error_a=avg_error(u_exact_a[-1,:],u_appx_a[-1,:])
 
 #values given in problem statement
 g_0,g_L=BC_Partb(t,w,k,L)
+#initial condition
 f=[0]*len_x
 F=preF(D,k,w,x,t)
 
@@ -203,13 +208,25 @@ rhs= [0]*N
 
 #for loop for calling the thomas algorithm at the different time steps
 for n in range (1,len_t):
+#from 1, len_t because initial conditions are defined
     Q=F[n-1,:]
     q=u_appx_b[n-1,:]
-    rhs[0]=-b*q[0]+d*q[1]-c*q[2]-b*u_appx_b[n,0]+dt*Q[0]
+#also look at this line    
+#    rhs[0]=-b*q[0]+d*q[1]-c*q[2]-b*u_appx_b[n,0]+dt*Q[1]
+#check the signs    
+    rhs[0]=-b*q[0]+d*q[1]-c*q[2]-b*u_appx_b[n,0]+dt*Q[1]
 #    inner for loop for filling up the rhs vector for the thomas algorithm
 #    print(n)
-    for j in range (1,N):
-        rhs[j]=-b*q[j]+d*q[j+1]-c*q[j+2]+dt*Q[j+1]
+    for j in range (1,N-1):
+#this is the line I need to focus on
+#pay attention to indexes, but I dont think that is the issue        
+#        rhs[j]=-b*q[j]+d*q[j+1]-c*q[j+2]+dt*Q[j+1]        
+        rhs[j]=-b*q[j]+d*q[j+1]-c*q[j+2]+dt*Q[j+1]        
+#last input different
+        j=j+1
+        rhs[j]=-b*q[j]+d*q[j+1]-c*q[j+2]-c*u_appx_b[n,-1]+dt*Q[j+1]  
+                  
+        
 #        print(j)
     u_appx_b[n,1:-1]=thomas_alg_func(av,bv,cv,rhs)
 
@@ -225,3 +242,21 @@ error_b=avg_error(u_exact_b[-1,:],u_appx_b[-1,:])
 # for large N my error on the right hand side is big.
 #the error is bigger for large t but still reasonable
 #okay so maybe I need to modify the last input to the rhs vector
+#the error growing with time makes sense, because there is error in each time step
+#so I have accumulating error really
+#but why is it so much bigger for part b rather than part a?
+#maybe all my inputs are wrong :( :( for part b
+#no its because I have that prescribed function for part B
+#and I am multiplying that function by dt, which is all I should be doing
+
+#there has to be a quicker way to solve this? rather then feeding the Cn into the Thomas Algorithm
+#every time steps.
+
+#okay found one error, when adding the F elements to the rhs equation I was adding F[0] but should have been F[1],
+#but that still didnt fix the issue
+
+#Okay good checked everything
+#it was of course that last line
+#it worked for part a because of the different boundary conditions, because they were zero before
+
+#I still have more error for part b tho
