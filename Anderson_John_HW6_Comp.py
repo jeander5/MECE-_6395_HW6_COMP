@@ -235,28 +235,14 @@ u_exact_b=u_exact_func_b(k, D, w, t, x)
 #calling the error function
 error_b=avg_error(u_exact_b[-1,:],u_appx_b[-1,:])
 
-
-#I dont know maybe it is right. as long as N is even I dont have that humongous error from the x/sin(pi/2) term
-#error goes down with with Increaing N
-#and error goes up with increasing omega
-# for large N my error on the right hand side is big.
-#the error is bigger for large t but still reasonable
-#okay so maybe I need to modify the last input to the rhs vector
-#the error growing with time makes sense, because there is error in each time step
-#so I have accumulating error really
-#but why is it so much bigger for part b rather than part a?
-#maybe all my inputs are wrong :( :( for part b
-#no its because I have that prescribed function for part B
-#and I am multiplying that function by dt, which is all I should be doing
-
-#there has to be a quicker way to solve this? rather then feeding the Cn into the Thomas Algorithm
-#every time steps.
-
-#okay found one error, when adding the F elements to the rhs equation I was adding F[0] but should have been F[1],
-#but that still didnt fix the issue
-
-#Okay good checked everything
-#it was of course that last line
-#it worked for part a because of the different boundary conditions, because they were zero before
-
 #I still have more error for part b tho
+#next up is plotting and grid convergence
+
+#plt.plot(x,u_appx_b[-1])
+
+#Do I wanna do this in a while loop like last time?
+# or just do it manually calling the functions to get the graphs I need?
+
+#I kinda wanna make a sweet graphing function. Like input (N_x, N_t, a, 8)
+#and it will plot 8 differnt graphs with the exact function for N_x points, 2*N_x points ect ect
+  
