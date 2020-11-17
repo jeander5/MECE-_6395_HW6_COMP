@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 #import time
 from math import sin as sin
 from math import cos as cos
-
+from mpl_toolkits import mplot3d
 
 #Constants given in problem statement, constant for both boundary conditions
 L=math.pi
@@ -105,22 +105,27 @@ def avg_error (exact,appx):
     """returns average error"""
 #inputs are just single row for exact and approximate solution
 #the entire x domain at a single time    
-    N=len(exact)
-    mysum =0
-    for j in range(1,N-1):
+    N=len(exact)-2
+    mysum=0
+    for j in range(1,N):
         mysum=mysum+abs((appx[j]-exact[j])/exact[j])
     error=mysum/N
     return error
 
 
-# N right here for now, just using the same for x and T
-N = 400
+# N right here is now number of grid points for x    
+N = 300
+#NT is now for number of "grid points" for t, ie the different times points
+NT = 652
 
 #calling the DIF
 x, dx = DIF(L,N)
-t, dt = DIF (T,N)
+t, dt = DIF (T,NT)
 #lets define omega right here actually, after dt is defined
-w=0.1/dt 
+w=0.1/dt
+
+#for a fixed dt, try increasing omega,
+
 len_x = len(x)
 len_t = len(t)
 
@@ -176,13 +181,14 @@ for n in range (1,len_t):
 #calling exact function
 u_exact_a=u_exact_func_a(k, D, t, x)
 #calling the error function
-error_a=avg_error(u_exact_a[-1,:],u_appx_a[-1,:])
+error_a=avg_error(u_exact_a[-1],u_appx_a[-1])
 
 
 # =============================================================================
 # part B
 # =============================================================================
 #is not working
+#is now working real nice
 
 #values given in problem statement
 g_0,g_L=BC_Partb(t,w,k,L)
@@ -200,7 +206,7 @@ u_appx_b[:,-1]=g_L
 u_appx_b[0,:]=f
 
 #input vecotrs for the thomas algorithm function
-#i dont really need to redine these but im trying to be consistent
+#i dont really need to redefine these but im trying to be consistent
 av= [a]*N
 bv= [b]*N
 cv= [c]*N
@@ -209,40 +215,156 @@ rhs= [0]*N
 #for loop for calling the thomas algorithm at the different time steps
 for n in range (1,len_t):
 #from 1, len_t because initial conditions are defined
-    Q=F[n-1,:]
+#this is the new method, I hope this right    
+    Q=np.array(1/2*(F[n-1,:]+F[n,:]))
     q=u_appx_b[n-1,:]
 #also look at this line    
 #    rhs[0]=-b*q[0]+d*q[1]-c*q[2]-b*u_appx_b[n,0]+dt*Q[1]
 #check the signs    
     rhs[0]=-b*q[0]+d*q[1]-c*q[2]-b*u_appx_b[n,0]+dt*Q[1]
 #    inner for loop for filling up the rhs vector for the thomas algorithm
-#    print(n)
     for j in range (1,N-1):
 #this is the line I need to focus on
-#pay attention to indexes, but I dont think that is the issue        
-#        rhs[j]=-b*q[j]+d*q[j+1]-c*q[j+2]+dt*Q[j+1]        
+#pay attention to indexes, but I dont think that is the issue             
         rhs[j]=-b*q[j]+d*q[j+1]-c*q[j+2]+dt*Q[j+1]        
 #last input different
         j=j+1
         rhs[j]=-b*q[j]+d*q[j+1]-c*q[j+2]-c*u_appx_b[n,-1]+dt*Q[j+1]  
-                  
-        
-#        print(j)
     u_appx_b[n,1:-1]=thomas_alg_func(av,bv,cv,rhs)
 
 #calling exact function
 u_exact_b=u_exact_func_b(k, D, w, t, x)
 #calling the error function
-error_b=avg_error(u_exact_b[-1,:],u_appx_b[-1,:])
+error_b=avg_error(u_exact_b[-1],u_appx_b[-1])
+
 
 #I still have more error for part b tho
 #next up is plotting and grid convergence
 
-#plt.plot(x,u_appx_b[-1])
+#plt.plot(x,u_appx_b[-1],'r:')
+#plt.plot(x,u_exact_b[-1],'b')
 
 #Do I wanna do this in a while loop like last time?
 # or just do it manually calling the functions to get the graphs I need?
 
 #I kinda wanna make a sweet graphing function. Like input (N_x, N_t, a, 8)
 #and it will plot 8 differnt graphs with the exact function for N_x points, 2*N_x points ect ect
-  
+#this would require sub plots for the different time levels 
+#I think I will just plot what I need, I dont need to put this in a while loop or anything
+#just do the gcs by observation  
+
+#my error for part b isnt really going down
+#maybe I still have an error
+
+#and it gets worse for different omegas. now im really unsure, i thought i had things fixed
+
+#okay maybe things where fine all along
+#I expirement with different dxs and different dt
+
+#from the notes.....
+#"The final order of the error in time is therefore the 
+#error of the terms indicated by O(dt^2) in the previous relations."
+#nice okay error isnt getting smaller with increase N
+#I feel like error still should depend on dx 
+#so why is my error getting bigger with more NT  values
+#because of the omega
+#lets try making omega independant of dt
+#error is going down with decreasing dt, 
+#but is not on the order of dt^2
+#something funky is going on with that omega
+#is very interesting... is almost like harmonic nodes
+
+#my error is increasing as dt is decreaseing how acan this be???
+
+#it does say just to check a few values of dt, like T/2, T/5 ect
+
+#maybe I have an error somewhere again I cant see :(
+
+#and if my error isnt getting smaller with dx how can I do a grid convergence study????
+
+#the error im looking at is Average error, for the last time step
+
+# its gotta be error propegation
+# the error im checking is for the last time value.
+# so, for increaseing dt im increaseing the times im adding the error?
+
+#If i checked my first, as in the first time step, error it should be smaller for small delta t'
+#which should just be this:
+#first_error_b=avg_error(u_exact_b[1,:],u_appx_b[1,:])
+#print(first_error_b)
+# and that decreases up to a point,m but then again for large NT it levels off and increases
+
+# im really unsure
+#I feel like the code is correct im just not understanding the error
+#which probably means the code is incorrect
+
+#no i think it is just error propagation
+#how could i prove that? how can I eliminate it???
+
+#the final truncation error isnt just dt^2, it has dx^2 terms in it
+
+# I wanna try a 3d graph
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+##ill just do this the dirty way
+#BIGU = np.asarray(u_appx_b).reshape(-1)
+#TP=(NT+2)*(N+2)
+##total points, is just len(BIGU) but now I dont have to call the len function
+#BIGX=[0]*TP
+#for n in range (NT+2):
+#    BIGX[n*(N+2):(n+1)*(N+2)]=x
+#BIGT=[0]*TP
+#for n in range (N+2):
+#    BIGT[n*(NT+2):(n+1)*(NT+2)]=t    
+#ax.plot3D(BIGX, BIGT, BIGU)
+#this graph isnt really working for me, i dont want the lines
+#ax.scatter3D(BIGX, BIGT, BIGU, c=BIGU,cmap='Blues')
+#I really want a surface plot
+#mesh grid
+#why is this giving me extra points
+BIGX, BIGT = np.meshgrid(x, t)    
+from matplotlib import cm    
+surf = ax.plot_surface(BIGX, BIGT, u_exact_b, cmap=cm.hot,
+                       linewidth=0, antialiased=False)
+#fig1 = plt.figure()
+#ax1 = plt.axes(projection='3d')
+#surf = ax1.plot_surface(BIGX, BIGT, u_exact_b, cmap=cm.bone,
+#                       linewidth=0, antialiased=False)
+#these arent that helpful they look the same
+
+#maybe a heatmap
+
+#the graphs arent helping me understand the error either
+
+
+#ok, but something isnt right. And I feel like Im handling everything okay,
+#except the F part. im multipying by dt and am keeping it on the right hand side
+#and Im evaluating at F (x,t) for solving u(x,t+dt) so F_j^(n+1)
+#i dont see what else to do
+
+#ok fuck I finally just found something online 1/2(F^(n+1)+F(n)) they use)
+#ok how would that work for the last point tho. I would just need to add a row
+#to my F that shouldnt be a big deal lets try this
+#oh no I already have that 
+
+#ok NICE sweet
+#ah okay and this totally make sense now!
+#the CN is like teh average of the implicit and explicit scheme, so that is why I am taking
+#the average of the prescribed function f nice.
+
+
+#nice the error behaves as expected nice......
+#the only thing left is why do I get such different surface, even for the exact value
+#for increasing dt
+#e geuss I miss the "true" shape of the function of my dts and dxs are too large
+#no that aint right
+#Okay hold up
+#dont get too excited maybe something else is wrong
+#im calling the exact function tho.....
+#oh its just the omega
+#no worries.
+#remember omega depends on dt
+#wow look at some of these surfaces the 1000x1000 is real cool
+
+#alright sweet
+#all clean these comments up and review things tomorrow
