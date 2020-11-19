@@ -12,12 +12,10 @@ Created on Thu Nov  5 18:11:56 2020
 #imports
 import math
 import numpy as np
-#import matplotlib.pyplot as plt
 import matplotlib.pyplot as plt
-#import time
 from math import sin as sin
 from math import cos as cos
-from mpl_toolkits import mplot3d
+#from mpl_toolkits import mplot3d
 
 #Constants given in problem statement, constant for both boundary conditions
 L=math.pi
@@ -111,9 +109,9 @@ def avg_error (exact,appx):
     return error
 
 # N grid points for x    
-N = 10
-#NT is  "grid points" for t,
-NT = 10
+##NT is  "grid points" for t,
+N=40
+NT=10
 
 #calling the DIF
 x, dx = DIF(L,N)
@@ -162,8 +160,6 @@ for n in range (1,len_t):
     #last input different
         j=j+1
         rhs[j]=-b*q[j]+d*q[j+1]-c*q[j+2]-c*u_appx_a[n,-1]      
-        if n==1:
-            store=rhs    
     u_appx_a[n,1:-1]=thomas_alg_func(av,bv,cv,rhs)
 
 #calling exact function
@@ -219,15 +215,32 @@ u_exact_b=u_exact_func_b(k, D, w, t, x)
 #calling the error function
 error_b=avg_error(u_exact_b[-1],u_appx_b[-1])
 
-#next up is plotting and grid convergence
-
+# =============================================================================
+# plotting
+# =============================================================================
+#uncomment these as needed for the report
+#fig, ax = plt.subplots()
+#plt.grid(1)
 #plt.plot(x,u_appx_b[-1],'r:')
 #plt.plot(x,u_exact_b[-1],'b')
+#ax.legend(['Approximate Values','Exact Values'])
+##ax.title(['Part A: %s interior grid points and a time interval of'%(N)])
+#ax.title.set_text(
+#        'Part B: %s interior x points and \n %s interior time points at t=%ss \n $\omega$=%s'
+#                  %(N,NT,T,round(w,3)))
+#ax.set_xlabel('x')
+#ax.set_ylabel('u (x)')
+
 
 #3d graphing im only gonna keep the surface one
-#fig = plt.figure()
+#fig2 = plt.figure()
 #ax = plt.axes(projection='3d')
 #BIGX, BIGT = np.meshgrid(x, t)    
 #from matplotlib import cm    
-#surf = ax.plot_surface(BIGX, BIGT, u_exact_b, cmap=cm.hot,
+#surf = ax.plot_surface(BIGX, BIGT, u_appx_b, cmap=cm.viridis,
 #                       linewidth=0, antialiased=False)
+#fig2.colorbar(surf, shrink=0.75, aspect=5)
+#ax.set_title('u values for part b, $\omega$=%s'%(round(w,3)))
+#ax.set_xlabel('x')
+#ax.set_ylabel('t [s]')
+#ax.set_zlabel('u')
